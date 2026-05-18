@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f1419">
+<title>Uropod Lab — Teste de Bancada</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Manrope:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1419;
+    --surface: #1a2028;
+    --surface-2: #232b35;
+    --accent: #4ade80;
+    --accent-dim: #166534;
+    --text: #e8eaed;
+    --text-dim: #8b95a1;
+    --border: #2d3744;
+    --danger: #f87171;
+    --warning: #fbbf24;
+    --blue: #60a5fa;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Manrope', sans-serif;
+    min-height: 100vh;
+    padding: 20px 16px;
+    overflow-x: hidden;
+  }
+  .container {
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo {
+    font-family: 'Fraunces', serif;
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin-bottom: 4px;
+  }
+  .logo-accent { color: var(--accent); }
+  .subtitle {
+    color: var(--text-dim);
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+  }
+  .lab-tag {
+    display: inline-block;
+    background: rgba(96, 165, 250, 0.15);
+    color: var(--blue);
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-top: 8px;
+    letter-spacing: 0.05em;
+  }
+
+  .panel {
+    background: var(--surface);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+  }
+  .panel-title {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .panel-num {
+    background: var(--accent-dim);
+    color: var(--accent);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'Manrope', sans-serif;
+  }
+
+  /* Estado da gravação */
+  .record-area {
+    text-align: center;
+  }
+  .timer {
+    font-family: 'Fraunces', serif;
+    font-size: 64px;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    margin: 12px 0 4px;
+    color: var(--text);
+  }
+  .timer-label {
+    color: var(--text-dim);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 24px;
+  }
+  .waveform {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 60px;
+    margin: 16px 0 24px;
+  }
+  .bar {
+    width: 5px;
+    background: var(--text-dim);
+    border-radius: 3px;
+    transition: height 0.1s ease;
+    height: 8px;
+  }
+  .recording .bar { background: var(--accent); }
+  
+  .record-btn {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background: var(--danger);
+    border: 6px solid rgba(248, 113, 113, 0.25);
+    color: white;
+    font-size: 28px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    margin: 8px 0;
+  }
+  .record-btn:active { transform: scale(0.95); }
+  .record-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .record-btn.recording {
+    background: var(--text);
+    box-shadow: 0 0 30px rgba(248, 113, 113, 0.5);
+  }
+  .record-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: white;
+    transition: all 0.2s;
+  }
+  .recording .record-icon {
+    border-radius: 4px;
+    background: var(--danger);
+    width: 24px;
+    height: 24px;
+  }
+  .hint {
+    color: var(--text-dim);
+    font-size: 12px;
+    margin-top: 12px;
+    line-height: 1.5;
+  }
+
+  /* Resultado */
+  .result-hidden { display: none; }
+  .verdict {
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 16px;
+    border: 1px solid;
+  }
+  .verdict.green {
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.15), rgba(22, 101, 52, 0.1));
+    border-color: var(--accent);
+  }
+  .verdict.red {
+    background: linear-gradient(135deg, rgba(248, 113, 113, 0.15), rgba(127, 29, 29, 0.1));
+    border-color: var(--danger);
+  }
+  .verdict.yellow {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(146, 64, 14, 0.1));
+    border-color: var(--warning);
+  }
+  .verdict-icon { font-size: 36px; margin-bottom: 8px; }
+  .verdict-text {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .verdict-sub { font-size: 12px; color: var(--text-dim); }
+
+  .metric-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .metric-row:last-child { border-bottom: none; }
+  .metric-name { color: var(--text-dim); }
+  .metric-val { font-weight: 600; font-family: 'Fraunces', serif; }
+
+  .band-bars {
+    margin-top: 12px;
+  }
+  .band-bar {
+    display: grid;
+    grid-template-columns: 100px 1fr 45px;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 12px;
+  }
+  .band-label { color: var(--text-dim); }
+  .band-track {
+    height: 14px;
+    background: var(--surface-2);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+  }
+  .band-fill {
+    height: 100%;
+    background: var(--blue);
+    border-radius: 4px;
+    transition: width 0.6s ease;
+  }
+  .band-fill.template {
+    background: rgba(96, 165, 250, 0.3);
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  .band-val { text-align: right; font-weight: 600; font-family: 'Fraunces', serif; }
+
+  /* Histórico */
+  .history-empty {
+    color: var(--text-dim);
+    text-align: center;
+    padding: 16px;
+    font-size: 13px;
+  }
+  .history-item {
+    background: var(--surface-2);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 8px;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+  }
+  .history-time { color: var(--text-dim); font-size: 11px; }
+  .history-score { font-family: 'Fraunces', serif; font-weight: 600; }
+  .history-score.pos { color: var(--accent); }
+  .history-score.neg { color: var(--danger); }
+  .history-score.neut { color: var(--warning); }
+  .history-delete {
+    background: transparent;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 18px;
+  }
+
+  .aggregate-result {
+    background: linear-gradient(135deg, rgba(96, 165, 250, 0.15), transparent);
+    border: 1px solid var(--blue);
+    border-radius: 12px;
+    padding: 16px;
+    margin-top: 12px;
+  }
+  .aggregate-title {
+    font-size: 12px;
+    color: var(--blue);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+
+  .btn {
+    background: var(--accent);
+    color: #052e16;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    width: 100%;
+    font-weight: 700;
+    font-size: 14px;
+    font-family: inherit;
+    cursor: pointer;
+    margin-top: 12px;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn.secondary {
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn.danger {
+    background: var(--surface-2);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+  }
+
+  .error {
+    background: rgba(248, 113, 113, 0.1);
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  .footer {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 11px;
+    margin-top: 20px;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="logo">Uro<span class="logo-accent">pod</span></div>
+    <div class="subtitle">Análise Acústica de Fluxo Urinário</div>
+    <span class="lab-tag">VERSÃO LABORATORIAL · v0.1</span>
+  </div>
+
+  <div id="errorBox" class="error" style="display:none;"></div>
+
+  <!-- Painel 1: Gravação -->
+  <div class="panel">
+    <div class="panel-title">
+      <span class="panel-num">1</span>
+      Nova gravação
+    </div>
+    
+    <div class="record-area" id="recordArea">
+      <div class="timer" id="timer">00:00</div>
+      <div class="timer-label" id="timerLabel">Pronto para gravar</div>
+
+      <div class="waveform" id="waveform">
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+      </div>
+
+      <button class="record-btn" id="recordBtn">
+        <div class="record-icon"></div>
+      </button>
+
+      <div class="hint" id="hint">
+        Posicione o celular próximo ao vaso (até 30 cm)<br>
+        Toque no botão para iniciar a gravação
+      </div>
+    </div>
+  </div>
+
+  <!-- Painel 2: Resultado -->
+  <div class="panel result-hidden" id="resultPanel">
+    <div class="panel-title">
+      <span class="panel-num">2</span>
+      Resultado da análise
+    </div>
+
+    <div class="verdict" id="verdictBox">
+      <div class="verdict-icon" id="verdictIcon">—</div>
+      <div class="verdict-text" id="verdictText">—</div>
+      <div class="verdict-sub" id="verdictSub">—</div>
+    </div>
+
+    <div class="metric-row">
+      <span class="metric-name">Flow score</span>
+      <span class="metric-val" id="scoreVal">—</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-name">Duração</span>
+      <span class="metric-val" id="durVal">—</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-name">Frequência dominante</span>
+      <span class="metric-val" id="freqVal">—</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-name">Centróide espectral</span>
+      <span class="metric-val" id="centroidVal">—</span>
+    </div>
+
+    <div style="margin-top: 16px; font-size: 12px; color: var(--text-dim); margin-bottom: 6px;">
+      Distribuição de energia (paciente vs template 10 mL/s):
+    </div>
+    <div class="band-bars" id="bandBars"></div>
+
+    <button class="btn" onclick="saveToHistory()">Salvar no histórico longitudinal</button>
+    <button class="btn secondary" onclick="resetResult()">Nova gravação</button>
+  </div>
+
+  <!-- Painel 3: Histórico Longitudinal -->
+  <div class="panel">
+    <div class="panel-title">
+      <span class="panel-num">3</span>
+      Histórico longitudinal
+    </div>
+    <div id="historyList"></div>
+    <div id="aggregateBox"></div>
+  </div>
+
+  <div class="footer">
+    Versão laboratorial · Dados ficam apenas neste dispositivo<br>
+    Template de referência: 10 mL/s (iPhone, Gabriel N. Carneiro)<br>
+    ⚠ Não é dispositivo médico aprovado · Apenas pesquisa
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// TEMPLATE DE REFERÊNCIA (extraído da gravação de 10 mL/s)
+// ============================================================
+const TEMPLATE = {
+  band_pct: { B1: 0.1133, B2: 0.4427, B3: 0.1106, B4: 0.1916, B5: 0.1418 },
+  centroid_rel: 0.2226,
+  low_energy_ratio: 0.5560,   // B1 + B2
+  high_energy_ratio: 0.4440   // B3 + B4 + B5
+};
+
+const BANDS = [
+  { name: 'B1', low: 0,    high: 500,   label: '0-500 Hz' },
+  { name: 'B2', low: 500,  high: 1500,  label: '500-1500 Hz' },
+  { name: 'B3', low: 1500, high: 3000,  label: '1500-3000 Hz' },
+  { name: 'B4', low: 3000, high: 6000,  label: '3000-6000 Hz' },
+  { name: 'B5', low: 6000, high: 24000, label: '6000+ Hz' }
+];
+
+// ============================================================
+// Estado da aplicação
+// ============================================================
+let mediaRecorder = null;
+let audioContext = null;
+let analyser = null;
+let recordedChunks = [];
+let startTime = 0;
+let timerInterval = null;
+let isRecording = false;
+let stream = null;
+let lastResult = null;
+
+const recordBtn = document.getElementById('recordBtn');
+const recordArea = document.getElementById('recordArea');
+const timerEl = document.getElementById('timer');
+const timerLabel = document.getElementById('timerLabel');
+const hintEl = document.getElementById('hint');
+const waveform = document.getElementById('waveform');
+const bars = waveform.querySelectorAll('.bar');
+const resultPanel = document.getElementById('resultPanel');
+const errorBox = document.getElementById('errorBox');
+
+// ============================================================
+// Gravação
+// ============================================================
+recordBtn.addEventListener('click', async () => {
+  if (isRecording) {
+    stopRecording();
+  } else {
+    await startRecording();
+  }
+});
+
+async function startRecording() {
+  try {
+    errorBox.style.display = 'none';
+    stream = await navigator.mediaDevices.getUserMedia({ 
+      audio: {
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+        sampleRate: 48000
+      } 
+    });
+
+    // Setup MediaRecorder for audio capture
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(stream);
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) recordedChunks.push(e.data);
+    };
+    mediaRecorder.onstop = processRecording;
+
+    // Setup AudioContext for waveform visualization
+    audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+    const source = audioContext.createMediaStreamSource(stream);
+    analyser = audioContext.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+
+    mediaRecorder.start();
+    startTime = Date.now();
+    isRecording = true;
+    recordBtn.classList.add('recording');
+    waveform.classList.add('recording');
+    timerLabel.textContent = 'Gravando...';
+    hintEl.textContent = 'Toque novamente para parar';
+
+    timerInterval = setInterval(updateTimer, 100);
+    visualizeWaveform();
+  } catch (err) {
+    showError('Erro ao acessar microfone: ' + err.message);
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.stop();
+  }
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+  }
+  isRecording = false;
+  recordBtn.classList.remove('recording');
+  waveform.classList.remove('recording');
+  clearInterval(timerInterval);
+  timerLabel.textContent = 'Processando...';
+  bars.forEach(b => b.style.height = '8px');
+}
+
+function updateTimer() {
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const mins = Math.floor(elapsed / 60).toString().padStart(2, '0');
+  const secs = (elapsed % 60).toString().padStart(2, '0');
+  timerEl.textContent = `${mins}:${secs}`;
+}
+
+function visualizeWaveform() {
+  if (!isRecording) return;
+  const data = new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(data);
+  
+  const step = Math.floor(data.length / bars.length);
+  bars.forEach((bar, i) => {
+    const value = data[i * step];
+    const height = Math.max(8, (value / 255) * 50);
+    bar.style.height = height + 'px';
+  });
+  
+  requestAnimationFrame(visualizeWaveform);
+}
+
+// ============================================================
+// Análise acústica (mesma lógica do classificador Python)
+// ============================================================
+async function processRecording() {
+  try {
+    const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+    const arrayBuffer = await blob.arrayBuffer();
+    
+    // Decodificar áudio
+    const decodeCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+    const audioBuffer = await decodeCtx.decodeAudioData(arrayBuffer);
+    const samples = audioBuffer.getChannelData(0);
+    const sr = audioBuffer.sampleRate;
+    const duration = audioBuffer.duration;
+    
+    if (duration < 1.0) {
+      showError('Gravação muito curta. Mínimo 1 segundo.');
+      resetUI();
+      return;
+    }
+
+    // Extrair assinatura
+    const sig = extractSignature(samples, sr);
+    const result = classifyFlow(sig);
+    result.duration = duration;
+    result.timestamp = new Date();
+    lastResult = result;
+
+    displayResult(result);
+    resetUI();
+  } catch (err) {
+    showError('Erro ao processar: ' + err.message);
+    resetUI();
+  }
+}
+
+function extractSignature(samples, sr) {
+  // FFT manual (real DFT) usando algoritmo de Cooley-Tukey iterativo
+  // Pegamos janela de potência de 2 mais próxima do tamanho da amostra
+  // Para áudio longo, fazemos FFT em janelas e somamos a magnitude
+  
+  const windowSize = 4096;
+  const hopSize = 2048;
+  const numWindows = Math.floor((samples.length - windowSize) / hopSize) + 1;
+  
+  const bandEnergies = { B1: 0, B2: 0, B3: 0, B4: 0, B5: 0 };
+  let weightedFreqSum = 0;
+  let totalMag = 0;
+  let dominantFreq = 0;
+  let dominantMag = 0;
+
+  for (let w = 0; w < numWindows; w++) {
+    const start = w * hopSize;
+    const window = new Float32Array(windowSize);
+    for (let i = 0; i < windowSize; i++) {
+      // Janela de Hann
+      const hann = 0.5 * (1 - Math.cos(2 * Math.PI * i / (windowSize - 1)));
+      window[i] = samples[start + i] * hann;
+    }
+    
+    const { mag, freqs } = computeFFT(window, sr);
+    
+    for (let i = 1; i < mag.length; i++) {
+      const f = freqs[i];
+      const m = mag[i];
+      const energy = m * m;
+
+      // Acumular energia em bandas
+      for (const band of BANDS) {
+        if (f >= band.low && f < band.high) {
+          bandEnergies[band.name] += energy;
+          break;
+        }
+      }
+
+      // Centróide espectral
+      weightedFreqSum += f * m;
+      totalMag += m;
+
+      // Frequência dominante
+      if (m > dominantMag) {
+        dominantMag = m;
+        dominantFreq = f;
+      }
+    }
+  }
+  
+  const totalEnergy = Object.values(bandEnergies).reduce((a,b) => a+b, 0);
+  const bandPct = {};
+  for (const k of Object.keys(bandEnergies)) {
+    bandPct[k] = bandEnergies[k] / totalEnergy;
+  }
+  
+  const centroidHz = totalMag > 0 ? weightedFreqSum / totalMag : 0;
+  const centroidRel = centroidHz / (sr / 2);
+  
+  return {
+    band_pct: bandPct,
+    centroid_rel: centroidRel,
+    centroid_hz: centroidHz,
+    dominant_freq: dominantFreq,
+    low_energy_ratio: bandPct.B1 + bandPct.B2,
+    high_energy_ratio: bandPct.B3 + bandPct.B4 + bandPct.B5
+  };
+}
+
+// FFT — implementação iterativa Cooley-Tukey
+function computeFFT(input, sr) {
+  const N = input.length;
+  const real = new Float32Array(N);
+  const imag = new Float32Array(N);
+  for (let i = 0; i < N; i++) real[i] = input[i];
+  
+  // Bit-reversal
+  let j = 0;
+  for (let i = 1; i < N; i++) {
+    let bit = N >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) {
+      [real[i], real[j]] = [real[j], real[i]];
+      [imag[i], imag[j]] = [imag[j], imag[i]];
+    }
+  }
+  
+  // Cooley-Tukey
+  for (let len = 2; len <= N; len <<= 1) {
+    const halfLen = len >> 1;
+    const angle = -2 * Math.PI / len;
+    const wReal = Math.cos(angle);
+    const wImag = Math.sin(angle);
+    for (let i = 0; i < N; i += len) {
+      let curReal = 1, curImag = 0;
+      for (let k = 0; k < halfLen; k++) {
+        const tReal = curReal * real[i + k + halfLen] - curImag * imag[i + k + halfLen];
+        const tImag = curReal * imag[i + k + halfLen] + curImag * real[i + k + halfLen];
+        real[i + k + halfLen] = real[i + k] - tReal;
+        imag[i + k + halfLen] = imag[i + k] - tImag;
+        real[i + k] += tReal;
+        imag[i + k] += tImag;
+        const nextReal = curReal * wReal - curImag * wImag;
+        curImag = curReal * wImag + curImag * wReal;
+        curReal = nextReal;
+      }
+    }
+  }
+  
+  // Magnitudes e frequências (só primeira metade)
+  const halfN = N >> 1;
+  const mag = new Float32Array(halfN);
+  const freqs = new Float32Array(halfN);
+  for (let i = 0; i < halfN; i++) {
+    mag[i] = Math.sqrt(real[i] * real[i] + imag[i] * imag[i]);
+    freqs[i] = i * sr / N;
+  }
+  return { mag, freqs };
+}
+
+function classifyFlow(sig) {
+  const highDiff = sig.high_energy_ratio - TEMPLATE.high_energy_ratio;
+  const lowDiff = sig.low_energy_ratio - TEMPLATE.low_energy_ratio;
+  const centroidDiff = sig.centroid_rel - TEMPLATE.centroid_rel;
+  
+  const score = (highDiff * 100) - (lowDiff * 50) + (centroidDiff * 200);
+  
+  let verdict, color, icon, sub;
+  if (Math.abs(score) < 2.0) {
+    verdict = '≈ 10 mL/s';
+    color = 'yellow';
+    icon = '~';
+    sub = 'Padrão limítrofe — recomenda-se nova medida';
+  } else if (score >= 8) {
+    verdict = '≥ 10 mL/s';
+    color = 'green';
+    icon = '✓';
+    sub = 'Fluxo dentro do esperado (alta confiança)';
+  } else if (score >= 2) {
+    verdict = '≥ 10 mL/s';
+    color = 'green';
+    icon = '✓';
+    sub = 'Fluxo dentro do esperado (confiança moderada)';
+  } else if (score <= -8) {
+    verdict = '< 10 mL/s';
+    color = 'red';
+    icon = '!';
+    sub = 'Possível redução do fluxo (alta confiança)';
+  } else {
+    verdict = '< 10 mL/s';
+    color = 'red';
+    icon = '!';
+    sub = 'Possível redução do fluxo (confiança moderada)';
+  }
+  
+  return {
+    signature: sig,
+    verdict, color, icon, sub,
+    score
+  };
+}
+
+// ============================================================
+// Exibir resultado
+// ============================================================
+function displayResult(r) {
+  const verdictBox = document.getElementById('verdictBox');
+  verdictBox.className = 'verdict ' + r.color;
+  document.getElementById('verdictIcon').textContent = r.icon;
+  document.getElementById('verdictText').textContent = r.verdict;
+  document.getElementById('verdictSub').textContent = r.sub;
+  document.getElementById('scoreVal').textContent = (r.score >= 0 ? '+' : '') + r.score.toFixed(2);
+  document.getElementById('durVal').textContent = r.duration.toFixed(1) + ' s';
+  document.getElementById('freqVal').textContent = Math.round(r.signature.dominant_freq) + ' Hz';
+  document.getElementById('centroidVal').textContent = Math.round(r.signature.centroid_hz) + ' Hz';
+  
+  const bandBars = document.getElementById('bandBars');
+  bandBars.innerHTML = '';
+  for (const band of BANDS) {
+    const pct = (r.signature.band_pct[band.name] * 100);
+    const tmpl = (TEMPLATE.band_pct[band.name] * 100);
+    bandBars.innerHTML += `
+      <div class="band-bar">
+        <span class="band-label">${band.label}</span>
+        <div class="band-track">
+          <div class="band-fill template" style="width: ${tmpl}%"></div>
+          <div class="band-fill" style="width: ${pct}%"></div>
+        </div>
+        <span class="band-val">${pct.toFixed(1)}%</span>
+      </div>
+    `;
+  }
+  
+  resultPanel.classList.remove('result-hidden');
+  resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetUI() {
+  timerEl.textContent = '00:00';
+  timerLabel.textContent = 'Pronto para gravar';
+  hintEl.innerHTML = 'Posicione o celular próximo ao vaso (até 30 cm)<br>Toque no botão para iniciar a gravação';
+}
+
+function resetResult() {
+  resultPanel.classList.add('result-hidden');
+  lastResult = null;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showError(msg) {
+  errorBox.textContent = msg;
+  errorBox.style.display = 'block';
+  setTimeout(() => errorBox.style.display = 'none', 6000);
+}
+
+// ============================================================
+// Histórico longitudinal (em memória durante a sessão)
+// ============================================================
+const history = [];
+
+function saveToHistory() {
+  if (!lastResult) return;
+  history.push({
+    timestamp: lastResult.timestamp,
+    score: lastResult.score,
+    verdict: lastResult.verdict,
+    color: lastResult.color,
+    band_pct: lastResult.signature.band_pct,
+    duration: lastResult.duration
+  });
+  renderHistory();
+  resetResult();
+}
+
+function deleteHistory(idx) {
+  history.splice(idx, 1);
+  renderHistory();
+}
+
+function renderHistory() {
+  const listEl = document.getElementById('historyList');
+  const aggregateEl = document.getElementById('aggregateBox');
+  
+  if (history.length === 0) {
+    listEl.innerHTML = '<div class="history-empty">Nenhuma gravação salva ainda</div>';
+    aggregateEl.innerHTML = '';
+    return;
+  }
+  
+  // Lista
+  listEl.innerHTML = history.map((h, i) => {
+    const t = h.timestamp;
+    const dateStr = t.toLocaleDateString('pt-BR') + ' ' + 
+                    t.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+    const scoreClass = h.score > 2 ? 'pos' : h.score < -2 ? 'neg' : 'neut';
+    return `
+      <div class="history-item">
+        <div>
+          <div>${h.verdict}</div>
+          <div class="history-time">${dateStr}</div>
+        </div>
+        <div class="history-score ${scoreClass}">${h.score >= 0 ? '+' : ''}${h.score.toFixed(1)}</div>
+        <button class="history-delete" onclick="deleteHistory(${i})">×</button>
+      </div>
+    `;
+  }).join('');
+  
+  // Agregação
+  if (history.length >= 2) {
+    const scores = history.map(h => h.score).sort((a,b) => a - b);
+    const mean = scores.reduce((a,b)=>a+b,0) / scores.length;
+    const median = scores.length % 2 === 0 
+      ? (scores[scores.length/2 - 1] + scores[scores.length/2]) / 2
+      : scores[Math.floor(scores.length/2)];
+    
+    // Desvio padrão
+    const variance = scores.reduce((a,b) => a + (b-mean)**2, 0) / scores.length;
+    const stdev = Math.sqrt(variance);
+    
+    const verdictFn = (s) => s > 2 ? '≥10 mL/s' : s < -2 ? '<10 mL/s' : 'limítrofe';
+    
+    let concordance = 'COMPLETA ✓';
+    let warning = '';
+    if (verdictFn(mean) !== verdictFn(median)) {
+      concordance = 'PARCIAL ⚠';
+      warning = '<div style="margin-top:8px;color:var(--warning);font-size:11px;">' +
+                'Métricas divergem — padrão variável detectado</div>';
+    }
+    
+    aggregateEl.innerHTML = `
+      <div class="aggregate-result">
+        <div class="aggregate-title">Análise agregada (${history.length} gravações)</div>
+        <div class="metric-row">
+          <span class="metric-name">Por média</span>
+          <span class="metric-val">${verdictFn(mean)} (${mean >= 0 ? '+' : ''}${mean.toFixed(2)})</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-name">Por mediana</span>
+          <span class="metric-val">${verdictFn(median)} (${median >= 0 ? '+' : ''}${median.toFixed(2)})</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-name">Variabilidade (DP)</span>
+          <span class="metric-val">${stdev.toFixed(2)}</span>
+        </div>
+        <div class="metric-row">
+          <span class="metric-name">Concordância</span>
+          <span class="metric-val">${concordance}</span>
+        </div>
+        ${warning}
+      </div>
+    `;
+  } else {
+    aggregateEl.innerHTML = '<div class="history-empty" style="margin-top:8px;">Agregação aparece com 2+ gravações</div>';
+  }
+}
+
+renderHistory();
+</script>
+</body>
+</html>
